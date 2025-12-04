@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stereo Distance Calculator</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .image-pair-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            max-width: 90vw;
+        }
+        .image-panel {
+            position: relative;
+            border: 2px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+            flex: 1 1 45%;
+        }
+        .image-panel img {
+            display: block;
+            width: 100%;
+            max-height: 400px;
+            cursor: crosshair;
+            object-fit: contain;
+            object-position: top center;
+            height: 100%;
+        }
+        .click-marker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255, 0, 0, 0.8);
+            border: 1px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        #controls-results {
+            width: 90%;
+            max-width: 700px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1, h2 { text-align: center; }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 15px;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        #results-area p {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 1.0em;
+        }
+        #status {
+            text-align: center;
+            font-weight: bold;
+            min-height: 24px;
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Stereo Image Measurement Tool 📐</h1>
+    <p style="text-align:center; max-width: 600px; color: #555;">
+        *Remember to run **`estimate_pose.py`** first to generate the necessary stereo projection matrices.*
+    </p>
+
+    <div class="image-pair-container">
+        <div id="image-container-L" class="image-panel">
+            <h2>Left Camera</h2>
+            <img id="measurement-image-L" src="{{ url_for('module7.static', filename='image_L.jpg') }}" alt="Left Image" onerror="this.onerror=null;this.src='https://placehold.co/640x480/cccccc/333333?text=Image+L+Missing';">
+        </div>
+
+        <div id="image-container-R" class="image-panel">
+            <h2>Right Camera</h2>
+            <img id="measurement-image-R" src="{{ url_for('module7.static', filename='image_R.jpg') }}" alt="Right Image" onerror="this.onerror=null;this.src='https://placehold.co/640x480/cccccc/333333?text=Image+R+Missing';">
+        </div>
+    </div>
+
+    <aside id="controls-results">
+        <h2>Results</h2>
+
+        <div class="control-group">
+            <label for="reference-depth-cm">Reference Z (Depth of Point 1, in cm):</label>
+            <input type="number" id="reference-depth-cm" value="76.0" step="0.1">
+        </div>
+
+        <button id="reset-button">Reset Points</button>
+
+        <div id="results-area">
+            <p id="status">Click **Point 1** on Left, then Right image. Then **Point 2** on Left, then Right image.</p>
+            <div id="results-display" style="display:none;">
+                <p><strong>3D Point 1 (X, Y, Z):</strong> <span id="p1-3d"></span> | **Depth (Z):** <span id="depth-1"></span></p>
+                <p><strong>3D Point 2 (X, Y, Z):</strong> <span id="p2-3d"></span> | **Depth (Z):** <span id="depth-2"></span></p>
+                <hr>
+                <p><strong>Real-World X Dist (Horizontal):</strong> <span id="result-x"></span></p>
+                <p><strong>Real-World Y Dist (Vertical):</strong> <span id="result-y"></span></p>
+                <p><strong>Real-World Z Dist (Depth Change):</strong> <span id="result-z"></span></p>
+                <p><strong>Total Real-World Dist:</strong> <span id="result-total"></span></p>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageContainerL = document.getElementById('image-container-L');
+            const imageContainerR = document.getElementById('image-container-R');
+            const imageElL = document.getElementById('measurement-image-L');
+            const imageElR = document.getElementById('measurement-image-R');
+            const statusEl = document.getElementById('status');
+            const resetButton = document.getElementById('reset-button');
+            const resultsDisplay = document.getElementById('results-display');
+            const referenceDepthEl = document.getElementById('reference-depth-cm');
+
+            let clickedPointsL = [];
+            let clickedPointsR = [];
+            let clickCount = 0;
+
+            // Ensure images load
+            const imageLoadPromiseL = new Promise(resolve => imageElL.onload = resolve);
+            const imageLoadPromiseR = new Promise(resolve => imageElR.onload = resolve);
+
+            Promise.all([imageLoadPromiseL, imageLoadPromiseR]).then(() => {
+                statusEl.textContent = 'Click **Point 1** on Left, then Right image. Then **Point 2** on Left, then Right image.';
+                if (imageElL.complete && imageElR.complete) {
+                    imageElL.onload();
+                    imageElR.onload();
+                }
+            });
+
+
+            // --- Click Handlers ---
+            imageElL.addEventListener('click', (event) => {
+                if (clickCount === 0 || clickCount === 2) {
+                    handleClick(event, 'L', imageElL, imageContainerL);
+                } else {
+                    statusEl.textContent = 'Wait for the Right image click.';
+                }
+            });
+
+            imageElR.addEventListener('click', (event) => {
+                if (clickCount === 1 || clickCount === 3) {
+                    handleClick(event, 'R', imageElR, imageContainerR);
+                } else {
+                    statusEl.textContent = 'Wait for the Left image click.';
+                }
+            });
+
+
+            function handleClick(event, camera, imageEl, containerEl) {
+                if (clickCount >= 4) {
+                    statusEl.textContent = 'Please reset to measure new points.';
+                    return;
+                }
+
+                const rect = imageEl.getBoundingClientRect();
+                const x_raw = event.clientX - rect.left;
+                const y_raw = event.clientY - rect.top;
+
+                // --- COORDINATE CORRECTION LOGIC ---
+                const naturalWidth = imageEl.naturalWidth;
+                const naturalHeight = imageEl.naturalHeight;
+                const renderedWidth = imageEl.clientWidth;
+
+                const scaleFactor = Math.min(renderedWidth / naturalWidth, imageEl.clientHeight / naturalHeight);
+
+                const scaledWidth = naturalWidth * scaleFactor;
+
+                const x_offset = (renderedWidth - scaledWidth) / 2;
+                const y_offset = 0;
+
+                const x_corrected = (x_raw - x_offset) / scaleFactor;
+                const y_corrected = (y_raw - y_offset) / scaleFactor;
+
+                // Validate
+                if (x_corrected < 0 || x_corrected > naturalWidth ||
+                    y_corrected < 0 || y_corrected > naturalHeight) {
+                    statusEl.textContent = 'Please click within the visible image area.';
+                    return;
+                }
+
+                // --- Store and Display ---
+                const pointToStore = { x: x_corrected, y: y_corrected };
+
+                if (camera === 'L') {
+                    clickedPointsL.push(pointToStore);
+                } else {
+                    clickedPointsR.push(pointToStore);
+                }
+
+                // Use the RAW display coordinates for the visual marker placement
+                addClickMarker(x_raw, y_raw, containerEl);
+                clickCount++;
+
+                // --- Update Status Text ---
+                if (clickCount === 1) {
+                    statusEl.textContent = 'Clicked Point 1 (L). Now click **Point 1** on the RIGHT image.';
+                } else if (clickCount === 2) {
+                    statusEl.textContent = 'Clicked Point 1 (R). Now click **Point 2** on the LEFT image.';
+                } else if (clickCount === 3) {
+                    statusEl.textContent = 'Clicked Point 2 (L). Now click **Point 2** on the RIGHT image.';
+                } else if (clickCount === 4) {
+                    statusEl.textContent = 'Calculating 3D distance...';
+                    calculateDistance();
+                }
+            }
+
+
+            resetButton.addEventListener('click', resetMeasurement);
+
+            function addClickMarker(x, y, containerEl) {
+                const marker = document.createElement('div');
+                marker.className = 'click-marker';
+                marker.style.left = `${x}px`;
+                marker.style.top = `${y}px`;
+                containerEl.appendChild(marker);
+            }
+
+            async function calculateDistance() {
+                // Ensure reference depth is valid
+                const referenceDepthCm = parseFloat(referenceDepthEl.value);
+                if (isNaN(referenceDepthCm) || referenceDepthCm <= 0) {
+                    statusEl.textContent = 'Error: Please enter a valid, positive reference depth (Z) for Point 1.';
+                    return;
+                }
+
+                const data = {
+                    points_L: clickedPointsL,
+                    points_R: clickedPointsR,
+                    referenceDepthCm: referenceDepthCm, // Pass the reference depth
+                    displayedDimensions: {
+                        width: imageElL.clientWidth,
+                        height: imageElL.clientHeight,
+                    },
+                    originalDimensions: {
+                        width: imageElL.naturalWidth,
+                        height: imageElL.naturalHeight,
+                    },
+                };
+
+                try {
+                    const response = await fetch('{{ url_for("module7.calculate_distance") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Server error occurred.');
+                    }
+
+                    const result = await response.json();
+                    displayResults(result);
+
+                } catch (error) {
+                    statusEl.textContent = `Error: ${error.message}`;
+                    resultsDisplay.style.display = 'none';
+                }
+            }
+
+            function displayResults(result) {
+                document.getElementById('result-x').textContent = result.realWorldDistanceX;
+                document.getElementById('result-y').textContent = result.realWorldDistanceY;
+                document.getElementById('result-z').textContent = result.realWorldDistanceZ;
+                document.getElementById('result-total').textContent = result.totalRealWorldDistance;
+
+                document.getElementById('p1-3d').textContent = result.P1_3D;
+                document.getElementById('p2-3d').textContent = result.P2_3D;
+                document.getElementById('depth-1').textContent = result.point1_depth_Z;
+                document.getElementById('depth-2').textContent = result.point2_depth_Z;
+
+                statusEl.textContent = 'Calculation complete!';
+                statusEl.style.color = '#5cb85c';
+                resultsDisplay.style.display = 'block';
+            }
+
+            function resetMeasurement() {
+                clickedPointsL = [];
+                clickedPointsR = [];
+                clickCount = 0;
+                document.querySelectorAll('.click-marker').forEach(marker => marker.remove());
+                statusEl.textContent = 'Click **Point 1** on Left, then Right image. Then **Point 2** on Left, then Right image.';
+                statusEl.style.color = '#d9534f';
+                resultsDisplay.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
+

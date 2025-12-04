@@ -1,0 +1,53 @@
+<!doctype html>
+<title>SIFT Comparison Results</title>
+<h1>🔑 SIFT & RANSAC Comparison Results</h1>
+<p>Metrics and Visualizations comparing your Custom SIFT implementation with the Open-Source (OpenCV) version.</p>
+
+<hr>
+
+<h2>Comparison Metrics</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Metric</th>
+            <th>Custom SIFT/RANSAC</th>
+            <th>Open-Source (OpenCV)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Keypoints Detected</td>
+            <td>{{ results.custom_keypoints }}</td>
+            <td>{{ results.open_cv_keypoints }}</td>
+        </tr>
+        <tr>
+            <td>Inlier Matches Found</td>
+            <td>{{ results.custom_matches }}</td>
+            <td>{{ results.open_cv_matches }}</td>
+        </tr>
+        <tr>
+            <td>Execution Time (seconds)</td>
+            <td>{{ "%.3f"|format(results.custom_time) }}s</td>
+            <td>{{ "%.3f"|format(results.open_cv_time) }}s</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr>
+
+<h2>Feature Match Visualization</h2>
+
+<div style="display: flex; justify-content: space-around;">
+    <div style="text-align: center;">
+        <h3>Custom SIFT Matches</h3>
+        <img src="{{ results.custom_match_img }}" alt="Custom SIFT Matches" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+    </div>
+
+    <div style="text-align: center;">
+        <h3>Open-Source SIFT Matches</h3>
+        <img src="{{ results.open_cv_match_img }}" alt="OpenCV SIFT Matches" style="max-width: 100%; height: auto; border: 1px solid #ccc;">
+    </div>
+</div>
+
+<hr>
+<p><a href="{{ url_for('module4.sift_compare') }}">Run another comparison</a> | <a href="{{ url_for('module4.index') }}">Back to home</a></p>

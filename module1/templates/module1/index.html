@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-World Distance Calculator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            gap: 30px;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #image-container {
+            position: relative; /* Crucial for positioning click markers */
+            max-width: 90vw;
+            max-height: 80vh;
+            border: 2px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        #measurement-image {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            cursor: crosshair;
+        }
+        .click-marker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255, 0, 0, 0.8);
+            border: 1px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%); /* Center the dot on the cursor */
+            pointer-events: none; /* Allows clicking through the markers */
+        }
+        #controls-results {
+            width: 350px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #1c1e21;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results-area {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        #results-area p {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+        #status {
+            text-align: center;
+            font-weight: bold;
+            min-height: 24px;
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <h1>Image Measurement Tool 📏</h1>
+        <div id="image-container">
+            <img id="measurement-image" src="{{ url_for('module1.static', filename='image.jpg') }}" alt="Image for measurement">
+        </div>
+    </main>
+
+    <aside id="controls-results">
+        <h2>Controls & Results</h2>
+        <div class="control-group">
+            <label for="camera-distance">Camera Distance (Z):</label>
+            <input type="number" id="camera-distance" value="61">
+        </div>
+
+        <button id="reset-button">Reset Points</button>
+
+        <div id="results-area">
+            <p id="status">Click 2 points on the image to measure.</p>
+            <div id="results-display" style="display:none;">
+                <p><strong>Real-World X Dist:</strong> <span id="result-x"></span></p>
+                <p><strong>Real-World Y Dist:</strong> <span id="result-y"></span></p>
+                <p><strong>Total Real-World Dist:</strong> <span id="result-total"></span></p>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageContainer = document.getElementById('image-container');
+            const imageEl = document.getElementById('measurement-image');
+            const statusEl = document.getElementById('status');
+            const resetButton = document.getElementById('reset-button');
+            const resultsDisplay = document.getElementById('results-display');
+
+            let clickedPoints = [];
+
+            // This ensures we only proceed after the image has fully loaded its dimensions.
+            imageEl.onload = () => {
+                console.log('Image loaded successfully.');
+                statusEl.textContent = 'Click 2 points on the image to measure.';
+            };
+
+            if (imageEl.complete) {
+                imageEl.onload();
+            }
+
+            imageEl.addEventListener('click', (event) => {
+                if (clickedPoints.length >= 2) {
+                    statusEl.textContent = 'Please reset to measure new points.';
+                    return;
+                }
+
+                // Get click coordinates relative to the image element
+                const rect = imageEl.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                clickedPoints.push({ x, y });
+                addClickMarker(x, y);
+
+                if (clickedPoints.length === 1) {
+                    statusEl.textContent = 'Click a second point.';
+                } else if (clickedPoints.length === 2) {
+                    statusEl.textContent = 'Calculating...';
+                    calculateDistance();
+                }
+            });
+
+            resetButton.addEventListener('click', resetMeasurement);
+
+            function addClickMarker(x, y) {
+                const marker = document.createElement('div');
+                marker.className = 'click-marker';
+                marker.style.left = `${x}px`;
+                marker.style.top = `${y}px`;
+                imageContainer.appendChild(marker);
+            }
+
+            async function calculateDistance() {
+                const cameraDistance = document.getElementById('camera-distance').value;
+
+                const data = {
+                    points: clickedPoints,
+                    displayedDimensions: {
+                        width: imageEl.clientWidth,
+                        height: imageEl.clientHeight,
+                    },
+                    originalDimensions: {
+                        width: imageEl.naturalWidth,
+                        height: imageEl.naturalHeight,
+                    },
+                    cameraDistance: parseFloat(cameraDistance)
+                };
+
+                try {
+                    const response = await fetch('{{ url_for("module1.calculate_distance") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Server error occurred.');
+                    }
+
+                    const result = await response.json();
+                    displayResults(result);
+
+                } catch (error) {
+                    statusEl.textContent = `Error: ${error.message}`;
+                    resultsDisplay.style.display = 'none';
+                }
+            }
+
+            function displayResults(result) {
+                document.getElementById('result-x').textContent = result.realWorldDistanceX;
+                document.getElementById('result-y').textContent = result.realWorldDistanceY;
+                document.getElementById('result-total').textContent = result.totalRealWorldDistance;
+
+                statusEl.textContent = 'Calculation complete!';
+                statusEl.style.color = '#5cb85c'; // Green color for success
+                resultsDisplay.style.display = 'block';
+            }
+
+            function resetMeasurement() {
+                clickedPoints = [];
+                // Remove all visual markers
+                document.querySelectorAll('.click-marker').forEach(marker => marker.remove());
+                statusEl.textContent = 'Click 2 points on the image to measure.';
+                statusEl.style.color = '#d9534f'; // Back to default red
+                resultsDisplay.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

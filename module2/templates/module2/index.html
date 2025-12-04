@@ -1,0 +1,90 @@
+
+<div class="module-content max-w-4xl mx-auto p-6">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Project Beta: Template Matching & Blurring</h1>
+
+    <div class="p-6 border border-gray-200 rounded-xl shadow-lg bg-white">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Template Matching and Blurring</h2>
+
+        <p class="text-base text-gray-600 mb-4">
+            Upload a scene image. The system will check a local database of templates for a match using Normalized Correlation. If detected, the object region will be blurred.
+        </p>
+
+        <p class="mt-4 mb-4">
+            <strong class="font-semibold text-gray-700">Scene Image:</strong>
+            <input type="file" id="sceneImageLoader" accept="image/*" class="ml-2 p-2 border border-gray-300 rounded-lg">
+        </p>
+
+        <button onclick="startDetectionAndBlur()"
+                class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">
+            Start Detection & Blur
+        </button>
+
+        <div id="loadingMessage" style="color: blue; display: none;" class="mt-4 text-center font-medium text-lg text-blue-600">
+            Processing...
+        </div>
+
+        <h3 class="text-xl font-semibold mt-8 mb-3 text-gray-700">Result Image:</h3>
+        <p id="matchStatus" class="text-sm text-gray-600 mb-4"></p>
+        <img id="resultImage" style="max-width: 100%; height: auto; border: 1px solid #ccc; display: none;" class="rounded-lg shadow-inner">
+    </div>
+
+    {# Define the URL for the template matching API using the Blueprint name and function name #}
+    {% set template_matching_url = url_for('module2.template_matching') %}
+
+    <script>
+        function startDetectionAndBlur() {
+            const fileInput = document.getElementById('sceneImageLoader');
+            const file = fileInput.files[0];
+            const loadingMessage = document.getElementById('loadingMessage');
+            const resultImage = document.getElementById('resultImage');
+            const matchStatus = document.getElementById('matchStatus');
+
+            if (!file) {
+                // Using a custom modal/message box is better than alert(), but keeping for functionality
+                alert('Please select an image file first.');
+                return;
+            }
+
+            loadingMessage.style.display = 'block';
+            matchStatus.textContent = '';
+            resultImage.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // CRITICAL FIX: The API URL is dynamically generated to include the Blueprint prefix
+            // (/project/beta/template_matching)
+            const apiUrl = '{{ template_matching_url }}';
+
+            fetch(apiUrl, {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Try to extract a specific error message from the JSON response body
+                    return response.json().then(err => { throw new Error(err.message || response.statusText); });
+                }
+                return response.json();
+            })
+            .then(result => {
+                loadingMessage.style.display = 'none';
+
+                if (result.status === 'success' && result.image_url) {
+                    matchStatus.textContent = result.message;
+                    // result.image_url is already the full prefixed path (e.g., /project/beta/uploads/...)
+                    resultImage.src = result.image_url;
+                    resultImage.style.display = 'block';
+                } else if (result.message) {
+                    matchStatus.textContent = 'Failed: ' + result.message;
+                }
+            })
+            .catch(error => {
+                loadingMessage.style.display = 'none';
+                matchStatus.textContent = 'An error occurred during processing: ' + (error.message || 'Check console for details.');
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</div>
+
