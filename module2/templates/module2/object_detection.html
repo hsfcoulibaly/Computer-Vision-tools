@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Detection & Blur - Module 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        .template-btn {
+            transition: all 0.2s ease;
+        }
+        .template-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        .template-btn.active {
+            border-color: #818cf8 !important;
+            background-color: rgba(99, 102, 241, 0.2) !important;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        .image-container {
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-100">
+    <div class="flex">
+        <!-- Sidebar with Templates -->
+        <aside class="w-64 glass-card min-h-screen p-4 fixed left-0 top-0 overflow-y-auto border-r border-indigo-500/20">
+            <a href="{{ url_for('module2.index') }}" class="flex items-center text-gray-400 hover:text-white mb-4 text-sm">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Module 2
+            </a>
+            
+            <h2 class="text-xl font-bold text-white mb-4 pb-2 border-b border-gray-700">Object Templates</h2>
+            <p class="text-sm text-gray-400 mb-4">Click a template to detect & blur it in the scene</p>
+            
+            <div class="grid grid-cols-2 gap-3">
+                {% for template in templates %}
+                <button 
+                    class="template-btn p-2 bg-slate-800 rounded-lg border-2 border-slate-700 hover:border-indigo-400 flex flex-col items-center"
+                    onclick="matchTemplate({{ template.id }})"
+                    id="template-btn-{{ template.id }}"
+                    title="{% if template.filename %}Click to match {{ template.name }}{% else %}Template not available{% endif %}"
+                >
+                    {% if template.url %}
+                    <img 
+                        src="{{ template.url }}" 
+                        alt="{{ template.name }}"
+                        class="w-full h-16 object-cover rounded mb-1"
+                        onerror="this.src='https://placehold.co/80x60/1e293b/64748b?text=Obj{{ template.id }}'"
+                    >
+                    {% else %}
+                    <div class="w-full h-16 bg-slate-700 rounded mb-1 flex items-center justify-center">
+                        <span class="text-gray-500 text-xs">No Image</span>
+                    </div>
+                    {% endif %}
+                    <span class="text-xs font-medium text-gray-300">Obj {{ template.id }}</span>
+                </button>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-6 pt-4 border-t border-gray-700">
+                <button 
+                    onclick="resetScene()"
+                    class="w-full py-2 px-4 bg-slate-700 text-gray-300 rounded-lg hover:bg-slate-600 transition text-sm font-medium"
+                >
+                    Reset Scene
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="ml-64 flex-1 p-8">
+            <div class="max-w-5xl mx-auto">
+                <h1 class="text-3xl font-bold text-white mb-2">Object Detection & Blur</h1>
+                <p class="text-gray-400 mb-6">Select an object template from the sidebar to detect and blur it in the scene below.</p>
+
+                <!-- Scene Image Display -->
+                <div class="glass-card rounded-xl p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-200 mb-4">Scene Image</h2>
+                    <p class="text-sm text-gray-400 mb-3">Click any object template (Obj 1-10) in the sidebar to detect and blur it in this scene.</p>
+                    <div class="image-container bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-600">
+                        <img id="sceneImage" src="{{ default_scene_url }}" alt="Scene Image" class="max-w-full max-h-[500px] rounded-lg">
+                    </div>
+                </div>
+
+                <!-- Result Section -->
+                <div class="glass-card rounded-xl p-6" id="resultSection" style="display: none;">
+                    <h2 class="text-xl font-semibold text-gray-200 mb-2">Result</h2>
+                    <div id="resultStatus" class="mb-4 p-3 rounded-lg"></div>
+                    <div class="image-container bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-600">
+                        <img id="resultImage" src="" alt="Result Image" class="max-w-full max-h-[500px] rounded-lg">
+                    </div>
+                </div>
+
+                <!-- Loading Overlay -->
+                <div id="loadingOverlay" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50" style="display: none;">
+                    <div class="glass-card p-6 rounded-xl flex items-center gap-4">
+                        <svg class="animate-spin h-8 w-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-lg font-medium text-gray-200">Processing...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const matchTemplateUrl = '{{ url_for("module2.match_default_template") }}';
+        const defaultSceneUrl = '{{ default_scene_url }}';
+
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        function highlightButton(templateId) {
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.getElementById(`template-btn-${i}`);
+                if (btn) btn.classList.remove('active');
+            }
+            const activeBtn = document.getElementById(`template-btn-${templateId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+        }
+
+        async function matchTemplate(templateId) {
+            showLoading(true);
+            highlightButton(templateId);
+
+            try {
+                const response = await fetch(matchTemplateUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ template_id: templateId })
+                });
+
+                const result = await response.json();
+                const resultSection = document.getElementById('resultSection');
+                const resultStatus = document.getElementById('resultStatus');
+                const resultImage = document.getElementById('resultImage');
+
+                resultSection.style.display = 'block';
+
+                if (result.status === 'success') {
+                    resultImage.src = result.result_url;
+                    
+                    if (result.match_found) {
+                        resultStatus.innerHTML = `<strong class="text-emerald-400">✓ ${result.template_name} Detected!</strong><br><span class="text-gray-300">${result.message}</span>`;
+                        resultStatus.className = 'mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30';
+                    } else {
+                        resultStatus.innerHTML = `<strong class="text-amber-400">⚠ ${result.template_name} Not Found</strong><br><span class="text-gray-300">${result.message}</span>`;
+                        resultStatus.className = 'mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30';
+                    }
+                } else {
+                    resultStatus.innerHTML = `<strong class="text-red-400">✗ Error</strong><br><span class="text-gray-300">${result.message}</span>`;
+                    resultStatus.className = 'mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30';
+                }
+
+                resultSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('Match error:', error);
+                alert('An error occurred during template matching.');
+            }
+
+            showLoading(false);
+        }
+
+        function resetScene() {
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('resultImage').src = '';
+            
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.getElementById(`template-btn-${i}`);
+                if (btn) btn.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
+

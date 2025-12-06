@@ -12,26 +12,26 @@ from module7.module7_blueprint import module7_bp
 app = Flask(__name__)
 
 # --- Register Blueprints ---
-# Project Alpha: /project/alpha/*
-app.register_blueprint(module1_bp, url_prefix='/project/alpha')
-# Project Beta: /project/beta/*
-app.register_blueprint(module2_bp, url_prefix='/project/beta')
-# Project Gamma: /project/gamma/*
-app.register_blueprint(module3_bp, url_prefix='/project/gamma')
-# Project Delta: /project/delta/*
-app.register_blueprint(module4_bp, url_prefix='/project/delta')
-# Project Zeta: /project/zeta/*
-app.register_blueprint(module7_bp, url_prefix='/project/zeta')
+# Module 1: /module/1/*
+app.register_blueprint(module1_bp, url_prefix='/module/1')
+# Module 2: /module/2/*
+app.register_blueprint(module2_bp, url_prefix='/module/2')
+# Module 3: /module/3/*
+app.register_blueprint(module3_bp, url_prefix='/module/3')
+# Module 4: /module/4/*
+app.register_blueprint(module4_bp, url_prefix='/module/4')
+# Module 6: /module/6/*
+app.register_blueprint(module7_bp, url_prefix='/module/6')
 
 # Define the navigation items for the 8 tabs
 NAV_ITEMS = [
     {'title': 'Home Hub', 'route': '/'},
-    {'title': 'Project Alpha', 'route': '/project/alpha'},
-    {'title': 'Project Beta', 'route': '/project/beta'},  # This links to the Blueprint index
-    {'title': 'Project Gamma', 'route': '/project/gamma'},
-    {'title': 'Project Delta', 'route': '/project/delta'},
-    {'title': 'Project Epsilon', 'route': '/project/epsilon'},
-    {'title': 'Project Zeta', 'route': '/project/zeta'},
+    {'title': 'Module 1', 'route': '/module/1'},
+    {'title': 'Module 2', 'route': '/module/2'},  # This links to the Blueprint index
+    {'title': 'Module 3', 'route': '/module/3'},
+    {'title': 'Module 4', 'route': '/module/4'},
+    {'title': 'Module 5', 'route': '/module/5'},
+    {'title': 'Module 6', 'route': '/module/6'},
     {'title': 'Main Dashboard', 'route': '/dashboard'},
 ]
 
@@ -62,35 +62,35 @@ def dashboard():
     )
 
 
-# --- Remaining Sub-Project Routes (Placeholders: Gamma through Zeta) ---
+# --- Remaining Module Routes (Placeholders) ---
 
-@app.route('/project/<project_name>')
-def sub_project_view(project_name):
+@app.route('/module/<module_name>')
+def sub_module_view(module_name):
     """
-    Renders the view for sub-projects that are NOT Project Alpha or Beta (already handled by Blueprints).
+    Renders the view for modules that are NOT already handled by Blueprints.
     """
 
-    # We only handle projects here that are not registered as blueprints yet.
-    if project_name in ['alpha', 'beta', 'gamma', 'delta', 'zeta']:
+    # We only handle modules here that are not registered as blueprints yet.
+    if module_name in ['1', '2', '3', '4', '6']:
         return home()  # Redirect to home if someone tries to access a blueprint via the placeholder route
 
-    # Capitalize the name for display (e.g., 'gamma' -> 'Gamma')
-    display_name = project_name.capitalize()
-    current_path = f'/project/{project_name}'
+    # Format the name for display (e.g., '5' -> 'Module 5')
+    display_name = f"Module {module_name}"
+    current_path = f'/module/{module_name}'
 
-    # Check if the project exists in our defined navigation
+    # Check if the module exists in our defined navigation
     is_valid = any(item['route'] == current_path for item in NAV_ITEMS)
 
     if not is_valid:
-        content_title = "Error: Project Not Found"
-        content_body = f"The project '{display_name}' could not be located."
+        content_title = "Error: Module Not Found"
+        content_body = f"The module '{display_name}' could not be located."
         current_route = current_path
     else:
-        content_title = f"{display_name} Project Homepage (Placeholder)"
+        content_title = f"{display_name} Homepage (Placeholder)"
         content_body = (
             f"This is the temporary landing page for **{display_name}**.<br><br>"
-            "To fully integrate this project, refactor its Python code into a Flask Blueprint "
-            "like Project Alpha or Beta, create its own template folder, and register it in the main "
+            "To fully integrate this module, refactor its Python code into a Flask Blueprint "
+            "like Module 1 or Module 2, create its own template folder, and register it in the main "
             "<code>app.py</code> file."
         )
         current_route = current_path

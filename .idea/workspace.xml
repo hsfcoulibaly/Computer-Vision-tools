@@ -4,14 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="20916990-d7bd-4dff-8ef3-ed353bba229d" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/Computer-Vision.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/base.html" afterDir="false" />
+    <list default="true" id="20916990-d7bd-4dff-8ef3-ed353bba229d" name="Changes" comment="requirements imports">
+      <change afterPath="$PROJECT_DIR$/module2/static/scene/default_scene.jpg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/module2/module2_blueprint.py" beforeDir="false" afterPath="$PROJECT_DIR$/module2/module2_blueprint.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/module2/static/templates/t" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/module2/templates/module2/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/module2/templates/module2/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/module2/utils/fourier_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/module2/utils/fourier_solver.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/module2/utils/template_matcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/module2/utils/template_matcher.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,25 +30,42 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 3
-}]]></component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;hsfcoulibaly&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/hsfcoulibaly/Computer-Vision-tools.git&quot;,
+    &quot;accountId&quot;: &quot;f5e61a7b-a7b9-44d1-b008-28603baa2f0b&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
   <component name="ProjectId" id="36LmGTtXfIqxkTTOqYYhrqkqNHz" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.app.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "ignore.virus.scanning.warn.message": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.app.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\hsfco\PycharmProjects\Computer-Vision\module2\static\scene" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -63,6 +81,19 @@
       <option name="presentableId" value="Default" />
       <updated>1764794129618</updated>
     </task>
+    <task id="LOCAL-00001" summary="requirements imports">
+      <option name="closed" value="true" />
+      <created>1764806977267</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1764806977267</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="requirements imports" />
+    <option name="LAST_COMMIT_MESSAGE" value="requirements imports" />
   </component>
 </project>

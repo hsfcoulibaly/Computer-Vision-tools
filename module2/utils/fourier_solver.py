@@ -1,81 +1,89 @@
 import cv2
 import numpy as np
+import os
 
 
-def create_gaussian_kernel_ft(shape, sigma):
+def deconvolution_wiener(image_path, output_dir, kernel_size=15, sigma=5, K=0.001):
     """
-    Creates a 2D Gaussian kernel and computes its 2D DFT.
+    Applies Gaussian blur and then attempts deconvolution using a Wiener Filter.
+    
+    Args:
+        image_path: Path to the input image
+        output_dir: Directory to save the output images
+        kernel_size: Size of the Gaussian kernel (default: 15)
+        sigma: Standard deviation of the Gaussian (default: 5)
+        K: Wiener filter regularization parameter (default: 0.001)
+        
+    Returns:
+        dict: Contains paths to original, blurred, and restored images, plus status message
     """
-    rows, cols = shape
-    center_row, center_col = rows // 2, cols // 2
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if img is None:
+        return {'error': 'Error loading image.'}
 
-    # Create the coordinate grids
-    x = np.arange(cols)
-    y = np.arange(rows)
-    X, Y = np.meshgrid(x, y)
+    # Convert to float32 and normalize [0, 1] for best FFT arithmetic
+    img_float = np.float32(img) / 255.0
+    rows, cols = img_float.shape
 
-    # The Gaussian function
-    gaussian = np.exp(-(((X - center_col) ** 2 + (Y - center_row) ** 2) / (2 * sigma ** 2)))
-    gaussian /= gaussian.sum()  # Normalize
+    # 1. Convolution (Blurring) to create L_b
+    blurred_img = cv2.GaussianBlur(img_float, (kernel_size, kernel_size), sigma)
 
-    # Shift the kernel to have the origin at (0, 0) for convolution/FT
-    gaussian_shifted = np.fft.ifftshift(gaussian)
+    # --- Deconvolution Setup (Wiener Filter using NumPy FFT) ---
 
-    # Compute the 2D DFT
-    g_ft = np.fft.fft2(gaussian_shifted)
-    return g_ft
+    # Construct and Transform the Gaussian Kernel G
+    G_kernel = cv2.getGaussianKernel(kernel_size, sigma)
+    G_kernel = G_kernel @ G_kernel.T
 
+    # Pad the kernel to the same size as the image
+    G_padded = np.zeros((rows, cols), dtype=np.float32)
+    h_k, w_k = G_kernel.shape
+    r_start, c_start = (rows - h_k) // 2, (cols - w_k) // 2
+    G_padded[r_start: r_start + h_k, c_start: c_start + w_k] = G_kernel
 
-def deblur_with_fourier_inverse(L_b, sigma, kernel_size):
-    """
-    Applies Gaussian blur (L -> L_b) and then uses inverse filtering
-    (Fourier Transform) to retrieve L from L_b.
+    # Shift the zero-frequency component for numpy's fft2
+    G_padded = np.fft.ifftshift(G_padded)
 
-    L_recovered = F^-1 ( F(L_b) / F(G) )
-    """
+    # 2. Compute DFTs
+    F_G = np.fft.fft2(G_padded)  # DFT of the Kernel G
+    F_Lb = np.fft.fft2(blurred_img)  # DFT of the Blurred Image L_b
 
-    # --- 1. Apply Gaussian Blurring (Creating L_b) ---
-    L = L_b.copy()  # L_b is the input image in this script, rename for clarity
-    L_b = cv2.GaussianBlur(L, (kernel_size, kernel_size), sigmaX=sigma, sigmaY=sigma)
-    L_b_gray = cv2.cvtColor(L_b, cv2.COLOR_BGR2GRAY).astype(np.float32)
+    # 3. Wiener Filter (Regularized Deconvolution)
+    F_G_conj = np.conjugate(F_G)
+    F_G_abs_sq = np.abs(F_G) ** 2
 
-    # --- 2. Create Gaussian Kernel FT (F(G)) ---
-    rows, cols = L_b_gray.shape
-    g_ft = create_gaussian_kernel_ft((rows, cols), sigma)
+    # The filter transfer function H_w
+    H_w = F_G_conj / (F_G_abs_sq + K)
 
-    # --- 3. Compute FT of Blurred Image (F(L_b)) ---
-    # np.fft works better for the complex division step than cv2.dft
-    l_b_ft = np.fft.fft2(L_b_gray)
+    # Apply the filter in the frequency domain
+    F_L_hat = H_w * F_Lb
 
-    # --- 4. Deconvolution (Inverse Filtering) ---
-    # F(L) = F(L_b) / F(G). Add a small epsilon to prevent division by zero/near-zero values
-    epsilon = 1e-6
-    # g_ft_regularized = g_ft.copy()
-    # g_ft_regularized[np.abs(g_ft) < epsilon] = epsilon # Simple regularization
+    # 4. Inverse DFT to get restored image (L_hat)
+    restored_img_normalized = np.fft.ifft2(F_L_hat)
+    # Take the magnitude and convert back to 8-bit [0, 255]
+    restored_img = np.abs(restored_img_normalized) * 255.0
 
-    # Perform the division in the frequency domain
-    l_ft = l_b_ft / (g_ft + epsilon)
+    # --- Final Saving and Conversion ---
 
-    # --- 5. Inverse FT (L_recovered) ---
-    # Shift the zero-frequency component back to the center (optional, but good practice)
-    # l_ft_shifted = np.fft.ifftshift(l_ft)
-    L_recovered = np.fft.ifft2(l_ft)
-    L_recovered = np.real(L_recovered)  # Only the real part is the image intensity
+    # Convert back to uint8 for saving/displaying
+    original_img_8u = np.clip(img_float * 255.0, 0, 255).astype(np.uint8)
+    blurred_img_8u = np.clip(blurred_img * 255.0, 0, 255).astype(np.uint8)
+    restored_img_8u = np.clip(restored_img, 0, 255).astype(np.uint8)
 
-    # Normalize and convert to 8-bit image
-    L_recovered = np.clip(L_recovered, 0, 255)
-    L_recovered = L_recovered.astype(np.uint8)
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Re-colorize (optional, for visualization)
-    L_recovered_color = cv2.cvtColor(L_recovered, cv2.COLOR_GRAY2BGR)
+    # 5. Save Outputs
+    original_path = os.path.join(output_dir, 'ft_original.png')
+    blurred_path = os.path.join(output_dir, 'ft_blurred.png')
+    restored_path = os.path.join(output_dir, 'ft_restored.png')
 
-    return L, L_b, L_recovered_color, "Deconvolution successful using Fourier Inverse Filter."
+    cv2.imwrite(original_path, original_img_8u)
+    cv2.imwrite(blurred_path, blurred_img_8u)
+    cv2.imwrite(restored_path, restored_img_8u)
 
-# Example function for Task 2 demonstration (can be run standalone)
-# if __name__ == '__main__':
-#     img = cv2.imread('test_image.jpg')
-#     original, blurred, recovered, status = deblur_with_fourier_inverse(img, sigma=5, kernel_size=9)
-#     cv2.imshow("Original", original)
-#     cv2.imshow("Blurred (L_b)", blurred)
-#     cv2.imshow("Recovered (L)", recovered)
-#     cv2.waitKey(0)
+    return {
+        'original': 'ft_original.png',
+        'blurred': 'ft_blurred.png',
+        'restored': 'ft_restored.png',
+        'status': f"Deconvolution successful! Used: Gaussian Blur (K={kernel_size}, σ={sigma}) and Wiener Filter (K={K})."
+    }

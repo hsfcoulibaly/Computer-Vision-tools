@@ -1,90 +1,104 @@
-
-<div class="module-content max-w-4xl mx-auto p-6">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Project Beta: Template Matching & Blurring</h1>
-
-    <div class="p-6 border border-gray-200 rounded-xl shadow-lg bg-white">
-        <h2 class="text-xl font-semibold text-gray-700 mb-4">Template Matching and Blurring</h2>
-
-        <p class="text-base text-gray-600 mb-4">
-            Upload a scene image. The system will check a local database of templates for a match using Normalized Correlation. If detected, the object region will be blurred.
-        </p>
-
-        <p class="mt-4 mb-4">
-            <strong class="font-semibold text-gray-700">Scene Image:</strong>
-            <input type="file" id="sceneImageLoader" accept="image/*" class="ml-2 p-2 border border-gray-300 rounded-lg">
-        </p>
-
-        <button onclick="startDetectionAndBlur()"
-                class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">
-            Start Detection & Blur
-        </button>
-
-        <div id="loadingMessage" style="color: blue; display: none;" class="mt-4 text-center font-medium text-lg text-blue-600">
-            Processing...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 2 - Computer Vision Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(99, 102, 241, 0.6);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .icon-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+        }
+    </style>
+</head>
+<body class="text-gray-100">
+    <div class="container mx-auto px-4 py-16">
+        <!-- Header -->
+        <div class="text-center mb-16">
+            <h1 class="text-5xl font-bold mb-4">
+                <span class="gradient-text">Module 2</span>
+            </h1>
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+                Computer Vision Toolkit featuring Template Matching with Object Blur and Fourier Transform Deconvolution
+            </p>
         </div>
 
-        <h3 class="text-xl font-semibold mt-8 mb-3 text-gray-700">Result Image:</h3>
-        <p id="matchStatus" class="text-sm text-gray-600 mb-4"></p>
-        <img id="resultImage" style="max-width: 100%; height: auto; border: 1px solid #ccc; display: none;" class="rounded-lg shadow-inner">
+        <!-- Feature Cards -->
+        <div class="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            
+            <!-- Object Detection Card -->
+            <a href="{{ url_for('module2.object_detection') }}" class="card rounded-2xl p-8 block">
+                <div class="icon-box w-16 h-16 rounded-xl flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Object Detection & Blur</h2>
+                <p class="text-gray-400 mb-6">
+                    Detect objects in a scene using template matching (NCC) and automatically blur the detected regions. 
+                    Uses multi-scale matching and ORB feature detection for robust results.
+                </p>
+                <div class="flex items-center text-indigo-400 font-medium">
+                    <span>Try it out</span>
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
+
+            <!-- Fourier Transform Card -->
+            <a href="{{ url_for('module2.fourier_transform') }}" class="card rounded-2xl p-8 block">
+                <div class="icon-box w-16 h-16 rounded-xl flex items-center justify-center mb-6">
+                    <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Fourier Transform Deconvolution</h2>
+                <p class="text-gray-400 mb-6">
+                    Upload any image to apply Gaussian blur followed by Wiener Filter deconvolution. 
+                    Visualize the original, blurred, and restored images side by side.
+                </p>
+                <div class="flex items-center text-purple-400 font-medium">
+                    <span>Try it out</span>
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </div>
+            </a>
+        </div>
+
+        <!-- Back to Hub -->
+        <div class="text-center mt-16">
+            <a href="/" class="inline-flex items-center text-gray-400 hover:text-white transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Hub
+            </a>
+        </div>
     </div>
-
-    {# Define the URL for the template matching API using the Blueprint name and function name #}
-    {% set template_matching_url = url_for('module2.template_matching') %}
-
-    <script>
-        function startDetectionAndBlur() {
-            const fileInput = document.getElementById('sceneImageLoader');
-            const file = fileInput.files[0];
-            const loadingMessage = document.getElementById('loadingMessage');
-            const resultImage = document.getElementById('resultImage');
-            const matchStatus = document.getElementById('matchStatus');
-
-            if (!file) {
-                // Using a custom modal/message box is better than alert(), but keeping for functionality
-                alert('Please select an image file first.');
-                return;
-            }
-
-            loadingMessage.style.display = 'block';
-            matchStatus.textContent = '';
-            resultImage.style.display = 'none';
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // CRITICAL FIX: The API URL is dynamically generated to include the Blueprint prefix
-            // (/project/beta/template_matching)
-            const apiUrl = '{{ template_matching_url }}';
-
-            fetch(apiUrl, {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => {
-                if (!response.ok) {
-                    // Try to extract a specific error message from the JSON response body
-                    return response.json().then(err => { throw new Error(err.message || response.statusText); });
-                }
-                return response.json();
-            })
-            .then(result => {
-                loadingMessage.style.display = 'none';
-
-                if (result.status === 'success' && result.image_url) {
-                    matchStatus.textContent = result.message;
-                    // result.image_url is already the full prefixed path (e.g., /project/beta/uploads/...)
-                    resultImage.src = result.image_url;
-                    resultImage.style.display = 'block';
-                } else if (result.message) {
-                    matchStatus.textContent = 'Failed: ' + result.message;
-                }
-            })
-            .catch(error => {
-                loadingMessage.style.display = 'none';
-                matchStatus.textContent = 'An error occurred during processing: ' + (error.message || 'Check console for details.');
-                console.error('Error:', error);
-            });
-        }
-    </script>
-</div>
-
+</body>
+</html>
