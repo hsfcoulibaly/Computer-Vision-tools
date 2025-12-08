@@ -62,7 +62,7 @@ NAV_ITEMS = [
         'icon': 'construction'
     },
     {
-        'title': 'Module 6',
+        'title': 'Module 7',
         'route': '/module/6',
         'description': 'Stereo Vision & 3D Triangulation. Calculate real-world 3D distances using stereo image pairs and camera projection matrices.',
         'icon': 'stereo'
@@ -83,7 +83,7 @@ def home():
     """Renders the main homepage with the project overview."""
     return render_template(
         'base.html',
-        page_title="Main Project Hub",
+        page_title="Computer Vision Tools",
         nav_items=NAV_ITEMS,
         current_route='/'
     )
