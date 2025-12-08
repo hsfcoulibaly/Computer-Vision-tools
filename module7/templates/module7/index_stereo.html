@@ -3,332 +3,594 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stereo Distance Calculator</title>
+    <title>Module 6 - Stereo Object Size Estimation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: sans-serif;
-            background-color: #f0f2f5;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #4c1d95 50%, #0f172a 100%);
+            min-height: 100vh;
         }
-        .image-pair-container {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            max-width: 90vw;
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         .image-panel {
             position: relative;
-            border: 2px solid #ccc;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            background-color: #fff;
-            flex: 1 1 45%;
+            overflow: hidden;
         }
         .image-panel img {
-            display: block;
-            width: 100%;
-            max-height: 400px;
             cursor: crosshair;
+            max-height: 400px;
             object-fit: contain;
-            object-position: top center;
-            height: 100%;
+            object-position: center;
         }
         .click-marker {
             position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: rgba(255, 0, 0, 0.8);
-            border: 1px solid white;
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             pointer-events: none;
             z-index: 10;
-        }
-        #controls-results {
-            width: 90%;
-            max-width: 700px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        h1, h2 { text-align: center; }
-        .control-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
             font-weight: bold;
-            margin-bottom: 5px;
-        }
-        input[type="number"] {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            padding: 10px;
-            background-color: #007bff;
             color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
+            text-shadow: 0 0 3px black;
+        }
+        .marker-1 { background-color: rgba(244, 114, 182, 0.9); box-shadow: 0 0 10px rgba(244, 114, 182, 0.5); }
+        .marker-2 { background-color: rgba(167, 139, 250, 0.9); box-shadow: 0 0 10px rgba(167, 139, 250, 0.5); }
+        .marker-3 { background-color: rgba(34, 211, 238, 0.9); box-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+        .marker-4 { background-color: rgba(74, 222, 128, 0.9); box-shadow: 0 0 10px rgba(74, 222, 128, 0.5); }
+        .marker-5 { background-color: rgba(251, 191, 36, 0.9); box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+        .marker-6 { background-color: rgba(248, 113, 113, 0.9); box-shadow: 0 0 10px rgba(248, 113, 113, 0.5); }
+        
+        .shape-btn {
+            transition: all 0.2s ease;
+        }
+        .shape-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+        }
+        .shape-btn:not(.active) {
+            opacity: 0.6;
+        }
+        .result-row {
+            background: rgba(167, 139, 250, 0.1);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+        }
+        .result-highlight {
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(244, 114, 182, 0.2) 100%);
+            border: 1px solid rgba(244, 114, 182, 0.4);
+        }
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            margin-bottom: 15px;
-            transition: background-color 0.2s;
-        }
-        button:hover { background-color: #0056b3; }
-        #results-area p {
-            background-color: #e9ecef;
-            padding: 10px;
-            border-radius: 4px;
-            margin: 10px 0;
-            font-size: 1.0em;
-        }
-        #status {
-            text-align: center;
-            font-weight: bold;
-            min-height: 24px;
-            color: #d9534f;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
         }
     </style>
 </head>
-<body>
-
-    <h1>Stereo Image Measurement Tool 📐</h1>
-    <p style="text-align:center; max-width: 600px; color: #555;">
-        *Remember to run **`estimate_pose.py`** first to generate the necessary stereo projection matrices.*
-    </p>
-
-    <div class="image-pair-container">
-        <div id="image-container-L" class="image-panel">
-            <h2>Left Camera</h2>
-            <img id="measurement-image-L" src="{{ url_for('module7.static', filename='image_L.jpg') }}" alt="Left Image" onerror="this.onerror=null;this.src='https://placehold.co/640x480/cccccc/333333?text=Image+L+Missing';">
+<body class="text-gray-100">
+    <div class="container mx-auto px-4 py-6 max-w-7xl">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <a href="/" class="inline-flex items-center text-gray-400 hover:text-white transition mb-3">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Hub
+            </a>
+            <h1 class="text-4xl font-bold mb-2">
+                <span class="gradient-text">Stereo Object Size Estimation</span>
+            </h1>
+            <p class="text-gray-400 max-w-2xl mx-auto text-sm">
+                Measure real-world dimensions of objects using calibrated stereo vision. Select a shape type and click corresponding points on both images.
+            </p>
         </div>
 
-        <div id="image-container-R" class="image-panel">
-            <h2>Right Camera</h2>
-            <img id="measurement-image-R" src="{{ url_for('module7.static', filename='image_R.jpg') }}" alt="Right Image" onerror="this.onerror=null;this.src='https://placehold.co/640x480/cccccc/333333?text=Image+R+Missing';">
+        <!-- Shape Selection -->
+        <div class="glass-card rounded-xl p-4 mb-6 max-w-4xl mx-auto">
+            <div class="flex flex-wrap items-center justify-center gap-4">
+                <span class="text-gray-400 text-sm font-medium">Select Shape:</span>
+                
+                <button onclick="selectShape('rectangle')" id="btn-rectangle" 
+                        class="shape-btn active flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="2"/>
+                    </svg>
+                    Rectangle (4 pts)
+                </button>
+                
+                <button onclick="selectShape('circle')" id="btn-circle"
+                        class="shape-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-pink-600 text-white font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke-width="2"/>
+                    </svg>
+                    Circle (3 pts)
+                </button>
+                
+                <button onclick="selectShape('polygon')" id="btn-polygon"
+                        class="shape-btn flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-600 text-white font-medium">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <polygon points="12,2 22,8.5 18,21 6,21 2,8.5" fill="none" stroke-width="2"/>
+                    </svg>
+                    Polygon (N pts)
+                </button>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="glass-card rounded-xl p-3 mb-4 max-w-4xl mx-auto">
+            <div class="flex items-center gap-3 text-sm">
+                <div class="bg-violet-500/20 px-3 py-1 rounded-full text-violet-300 font-medium" id="shape-label">Rectangle</div>
+                <p class="text-gray-400" id="instructions">
+                    Click 4 corners on the Left image, then 4 corresponding corners on the Right image.
+                </p>
+            </div>
+        </div>
+
+        <!-- Image Pair Container -->
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <!-- Left Camera -->
+            <div class="glass-card rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Left Camera
+                    </h2>
+                    <span class="text-xs bg-slate-700 px-2 py-1 rounded" id="left-count">0 points</span>
+                </div>
+                <div id="image-container-L" class="image-panel bg-slate-800/50 rounded-xl overflow-hidden flex items-center justify-center min-h-[350px]">
+                    <svg class="svg-overlay" id="svg-overlay-L"></svg>
+                    <img id="measurement-image-L" 
+                         src="{{ url_for('module7.static', filename='image_L.jpg') }}" 
+                         alt="Left Image" 
+                         class="w-full h-full"
+                         onerror="this.onerror=null;this.src='https://placehold.co/640x480/1e293b/64748b?text=Left+Image+Missing';">
+                </div>
+            </div>
+
+            <!-- Right Camera -->
+            <div class="glass-card rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Right Camera
+                    </h2>
+                    <span class="text-xs bg-slate-700 px-2 py-1 rounded" id="right-count">0 points</span>
+                </div>
+                <div id="image-container-R" class="image-panel bg-slate-800/50 rounded-xl overflow-hidden flex items-center justify-center min-h-[350px]">
+                    <svg class="svg-overlay" id="svg-overlay-R"></svg>
+                    <img id="measurement-image-R" 
+                         src="{{ url_for('module7.static', filename='image_R.jpg') }}" 
+                         alt="Right Image" 
+                         class="w-full h-full"
+                         onerror="this.onerror=null;this.src='https://placehold.co/640x480/1e293b/64748b?text=Right+Image+Missing';">
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls & Results -->
+        <div class="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            <!-- Controls -->
+            <div class="glass-card rounded-2xl p-5">
+                <h2 class="text-lg font-bold text-white mb-4">Controls</h2>
+
+                <!-- Reference Depth Input -->
+                <div class="mb-4">
+                    <label for="reference-depth-cm" class="block text-sm font-medium text-gray-400 mb-2">
+                        Reference Depth (Point 1 distance from camera, in cm)
+                    </label>
+                    <input type="number" 
+                           id="reference-depth-cm" 
+                           value="76.0" 
+                           step="0.1"
+                           class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-violet-500 focus:outline-none">
+                </div>
+
+                <!-- Polygon Point Count (for polygon mode) -->
+                <div class="mb-4" id="polygon-count-container" style="display: none;">
+                    <label for="polygon-count" class="block text-sm font-medium text-gray-400 mb-2">
+                        Number of Vertices
+                    </label>
+                    <input type="number" 
+                           id="polygon-count" 
+                           value="5" 
+                           min="3"
+                           max="10"
+                           class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white focus:border-violet-500 focus:outline-none">
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3 mb-4">
+                    <button id="reset-button" 
+                            class="flex-1 py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Reset
+                    </button>
+                    <button id="calculate-button" 
+                            class="flex-1 py-2 px-4 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-medium rounded-lg transition flex items-center justify-center gap-2"
+                            disabled>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Calculate
+                    </button>
+                </div>
+
+                <!-- Status -->
+                <div id="status" class="text-center py-2 px-3 rounded-lg bg-slate-800/50 border border-slate-700 text-gray-300 text-sm">
+                    Click points on Left image first...
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="glass-card rounded-2xl p-5">
+                <h2 class="text-lg font-bold text-white mb-4">Measurement Results</h2>
+                
+                <div id="results-placeholder" class="text-center text-gray-500 py-8">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                    </svg>
+                    <p>Results will appear here after calculation</p>
+                </div>
+
+                <div id="results-display" class="hidden space-y-3">
+                    <!-- Shape Type Badge -->
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="bg-violet-500/20 text-violet-300 px-3 py-1 rounded-full text-sm font-medium" id="result-shape-type">Rectangle</span>
+                        <span class="text-gray-500 text-sm" id="result-depth">Avg Depth: —</span>
+                    </div>
+
+                    <!-- Primary Measurements -->
+                    <div id="primary-results" class="result-highlight rounded-xl p-4">
+                        <!-- Filled dynamically -->
+                    </div>
+
+                    <!-- Secondary Measurements (edges, points) -->
+                    <div id="secondary-results" class="space-y-2 text-sm">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calibration Note -->
+        <div class="text-center mt-6 text-xs text-gray-500">
+            <p>⚠️ Ensure <code class="bg-slate-800 px-2 py-1 rounded text-violet-400">estimate_pose.py</code> has been run to generate stereo calibration matrices.</p>
         </div>
     </div>
 
-    <aside id="controls-results">
-        <h2>Results</h2>
-
-        <div class="control-group">
-            <label for="reference-depth-cm">Reference Z (Depth of Point 1, in cm):</label>
-            <input type="number" id="reference-depth-cm" value="76.0" step="0.1">
-        </div>
-
-        <button id="reset-button">Reset Points</button>
-
-        <div id="results-area">
-            <p id="status">Click **Point 1** on Left, then Right image. Then **Point 2** on Left, then Right image.</p>
-            <div id="results-display" style="display:none;">
-                <p><strong>3D Point 1 (X, Y, Z):</strong> <span id="p1-3d"></span> | **Depth (Z):** <span id="depth-1"></span></p>
-                <p><strong>3D Point 2 (X, Y, Z):</strong> <span id="p2-3d"></span> | **Depth (Z):** <span id="depth-2"></span></p>
-                <hr>
-                <p><strong>Real-World X Dist (Horizontal):</strong> <span id="result-x"></span></p>
-                <p><strong>Real-World Y Dist (Vertical):</strong> <span id="result-y"></span></p>
-                <p><strong>Real-World Z Dist (Depth Change):</strong> <span id="result-z"></span></p>
-                <p><strong>Total Real-World Dist:</strong> <span id="result-total"></span></p>
-            </div>
-        </div>
-    </aside>
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const imageContainerL = document.getElementById('image-container-L');
-            const imageContainerR = document.getElementById('image-container-R');
-            const imageElL = document.getElementById('measurement-image-L');
-            const imageElR = document.getElementById('measurement-image-R');
-            const statusEl = document.getElementById('status');
-            const resetButton = document.getElementById('reset-button');
-            const resultsDisplay = document.getElementById('results-display');
-            const referenceDepthEl = document.getElementById('reference-depth-cm');
+        // State
+        let currentShape = 'rectangle';
+        let pointsL = [];
+        let pointsR = [];
+        let clickingLeft = true;
+        
+        const shapeConfig = {
+            rectangle: { points: 4, name: 'Rectangle', instructions: 'Click 4 corners on the Left image, then 4 corresponding corners on the Right image.' },
+            circle: { points: 3, name: 'Circle', instructions: 'Click 3 points on the circle edge in the Left image, then 3 corresponding points on the Right image.' },
+            polygon: { points: null, name: 'Polygon', instructions: 'Click vertices on the Left image, then corresponding vertices on the Right image.' }
+        };
 
-            let clickedPointsL = [];
-            let clickedPointsR = [];
-            let clickCount = 0;
+        // DOM Elements
+        const imageElL = document.getElementById('measurement-image-L');
+        const imageElR = document.getElementById('measurement-image-R');
+        const containerL = document.getElementById('image-container-L');
+        const containerR = document.getElementById('image-container-R');
+        const statusEl = document.getElementById('status');
+        const resetButton = document.getElementById('reset-button');
+        const calculateButton = document.getElementById('calculate-button');
+        const referenceDepthEl = document.getElementById('reference-depth-cm');
+        const polygonCountEl = document.getElementById('polygon-count');
 
-            // Ensure images load
-            const imageLoadPromiseL = new Promise(resolve => imageElL.onload = resolve);
-            const imageLoadPromiseR = new Promise(resolve => imageElR.onload = resolve);
+        const markerColors = ['marker-1', 'marker-2', 'marker-3', 'marker-4', 'marker-5', 'marker-6'];
 
-            Promise.all([imageLoadPromiseL, imageLoadPromiseR]).then(() => {
-                statusEl.textContent = 'Click **Point 1** on Left, then Right image. Then **Point 2** on Left, then Right image.';
-                if (imageElL.complete && imageElR.complete) {
-                    imageElL.onload();
-                    imageElR.onload();
-                }
-            });
+        function getRequiredPoints() {
+            if (currentShape === 'polygon') {
+                return parseInt(polygonCountEl.value) || 5;
+            }
+            return shapeConfig[currentShape].points;
+        }
 
+        function selectShape(shape) {
+            currentShape = shape;
+            
+            // Update button styles
+            document.querySelectorAll('.shape-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${shape}`).classList.add('active');
+            
+            // Update instructions
+            document.getElementById('shape-label').textContent = shapeConfig[shape].name;
+            document.getElementById('instructions').textContent = shapeConfig[shape].instructions;
+            
+            // Show/hide polygon count input
+            document.getElementById('polygon-count-container').style.display = shape === 'polygon' ? 'block' : 'none';
+            
+            // Reset points
+            resetMeasurement();
+        }
 
-            // --- Click Handlers ---
-            imageElL.addEventListener('click', (event) => {
-                if (clickCount === 0 || clickCount === 2) {
-                    handleClick(event, 'L', imageElL, imageContainerL);
-                } else {
-                    statusEl.textContent = 'Wait for the Right image click.';
-                }
-            });
+        function updateStatus() {
+            const required = getRequiredPoints();
+            const leftCount = pointsL.length;
+            const rightCount = pointsR.length;
+            
+            document.getElementById('left-count').textContent = `${leftCount}/${required} points`;
+            document.getElementById('right-count').textContent = `${rightCount}/${required} points`;
+            
+            if (leftCount < required) {
+                statusEl.innerHTML = `Click <strong class="text-pink-400">Point ${leftCount + 1}</strong> on Left image`;
+                clickingLeft = true;
+            } else if (rightCount < required) {
+                statusEl.innerHTML = `Click <strong class="text-violet-400">Point ${rightCount + 1}</strong> on Right image`;
+                clickingLeft = false;
+            } else {
+                statusEl.innerHTML = `<span class="text-green-400">✓ All points selected. Click Calculate!</span>`;
+                calculateButton.disabled = false;
+            }
+        }
 
-            imageElR.addEventListener('click', (event) => {
-                if (clickCount === 1 || clickCount === 3) {
-                    handleClick(event, 'R', imageElR, imageContainerR);
-                } else {
-                    statusEl.textContent = 'Wait for the Left image click.';
-                }
-            });
+        function getImageCoordinates(event, imageEl) {
+            const rect = imageEl.getBoundingClientRect();
+            const x_raw = event.clientX - rect.left;
+            const y_raw = event.clientY - rect.top;
 
+            const naturalWidth = imageEl.naturalWidth;
+            const naturalHeight = imageEl.naturalHeight;
+            const renderedWidth = imageEl.clientWidth;
+            const renderedHeight = imageEl.clientHeight;
 
-            function handleClick(event, camera, imageEl, containerEl) {
-                if (clickCount >= 4) {
-                    statusEl.textContent = 'Please reset to measure new points.';
-                    return;
-                }
+            const scaleFactor = Math.min(renderedWidth / naturalWidth, renderedHeight / naturalHeight);
+            const scaledWidth = naturalWidth * scaleFactor;
+            const scaledHeight = naturalHeight * scaleFactor;
 
-                const rect = imageEl.getBoundingClientRect();
-                const x_raw = event.clientX - rect.left;
-                const y_raw = event.clientY - rect.top;
+            const x_offset = (renderedWidth - scaledWidth) / 2;
+            const y_offset = (renderedHeight - scaledHeight) / 2;
 
-                // --- COORDINATE CORRECTION LOGIC ---
-                const naturalWidth = imageEl.naturalWidth;
-                const naturalHeight = imageEl.naturalHeight;
-                const renderedWidth = imageEl.clientWidth;
+            const x_corrected = (x_raw - x_offset) / scaleFactor;
+            const y_corrected = (y_raw - y_offset) / scaleFactor;
 
-                const scaleFactor = Math.min(renderedWidth / naturalWidth, imageEl.clientHeight / naturalHeight);
-
-                const scaledWidth = naturalWidth * scaleFactor;
-
-                const x_offset = (renderedWidth - scaledWidth) / 2;
-                const y_offset = 0;
-
-                const x_corrected = (x_raw - x_offset) / scaleFactor;
-                const y_corrected = (y_raw - y_offset) / scaleFactor;
-
-                // Validate
-                if (x_corrected < 0 || x_corrected > naturalWidth ||
-                    y_corrected < 0 || y_corrected > naturalHeight) {
-                    statusEl.textContent = 'Please click within the visible image area.';
-                    return;
-                }
-
-                // --- Store and Display ---
-                const pointToStore = { x: x_corrected, y: y_corrected };
-
-                if (camera === 'L') {
-                    clickedPointsL.push(pointToStore);
-                } else {
-                    clickedPointsR.push(pointToStore);
-                }
-
-                // Use the RAW display coordinates for the visual marker placement
-                addClickMarker(x_raw, y_raw, containerEl);
-                clickCount++;
-
-                // --- Update Status Text ---
-                if (clickCount === 1) {
-                    statusEl.textContent = 'Clicked Point 1 (L). Now click **Point 1** on the RIGHT image.';
-                } else if (clickCount === 2) {
-                    statusEl.textContent = 'Clicked Point 1 (R). Now click **Point 2** on the LEFT image.';
-                } else if (clickCount === 3) {
-                    statusEl.textContent = 'Clicked Point 2 (L). Now click **Point 2** on the RIGHT image.';
-                } else if (clickCount === 4) {
-                    statusEl.textContent = 'Calculating 3D distance...';
-                    calculateDistance();
-                }
+            // Validate
+            if (x_corrected < 0 || x_corrected > naturalWidth ||
+                y_corrected < 0 || y_corrected > naturalHeight) {
+                return null;
             }
 
+            return { 
+                corrected: { x: x_corrected, y: y_corrected },
+                display: { x: x_raw, y: y_raw }
+            };
+        }
 
-            resetButton.addEventListener('click', resetMeasurement);
+        function addMarker(x, y, container, index) {
+            const marker = document.createElement('div');
+            marker.className = `click-marker ${markerColors[index % markerColors.length]}`;
+            marker.style.left = `${x}px`;
+            marker.style.top = `${y}px`;
+            marker.textContent = index + 1;
+            container.appendChild(marker);
+        }
 
-            function addClickMarker(x, y, containerEl) {
-                const marker = document.createElement('div');
-                marker.className = 'click-marker';
-                marker.style.left = `${x}px`;
-                marker.style.top = `${y}px`;
-                containerEl.appendChild(marker);
+        function handleLeftClick(event) {
+            const required = getRequiredPoints();
+            if (pointsL.length >= required) return;
+            
+            const coords = getImageCoordinates(event, imageElL);
+            if (!coords) {
+                statusEl.innerHTML = '<span class="text-red-400">Click within the image area</span>';
+                return;
+            }
+            
+            pointsL.push(coords.corrected);
+            addMarker(coords.display.x, coords.display.y, containerL, pointsL.length - 1);
+            updateStatus();
+        }
+
+        function handleRightClick(event) {
+            const required = getRequiredPoints();
+            if (pointsL.length < required) {
+                statusEl.innerHTML = '<span class="text-yellow-400">Complete Left image points first</span>';
+                return;
+            }
+            if (pointsR.length >= required) return;
+            
+            const coords = getImageCoordinates(event, imageElR);
+            if (!coords) {
+                statusEl.innerHTML = '<span class="text-red-400">Click within the image area</span>';
+                return;
+            }
+            
+            pointsR.push(coords.corrected);
+            addMarker(coords.display.x, coords.display.y, containerR, pointsR.length - 1);
+            updateStatus();
+        }
+
+        async function calculate() {
+            const referenceDepthCm = parseFloat(referenceDepthEl.value);
+            if (isNaN(referenceDepthCm) || referenceDepthCm <= 0) {
+                statusEl.innerHTML = '<span class="text-red-400">Enter a valid reference depth</span>';
+                return;
             }
 
-            async function calculateDistance() {
-                // Ensure reference depth is valid
-                const referenceDepthCm = parseFloat(referenceDepthEl.value);
-                if (isNaN(referenceDepthCm) || referenceDepthCm <= 0) {
-                    statusEl.textContent = 'Error: Please enter a valid, positive reference depth (Z) for Point 1.';
-                    return;
+            statusEl.innerHTML = '<span class="text-blue-400">Calculating...</span>';
+            calculateButton.disabled = true;
+
+            const data = {
+                shapeType: currentShape,
+                points_L: pointsL,
+                points_R: pointsR,
+                referenceDepthCm: referenceDepthCm,
+                displayedDimensions: {
+                    width: imageElL.clientWidth,
+                    height: imageElL.clientHeight,
+                },
+                originalDimensions: {
+                    width: imageElL.naturalWidth,
+                    height: imageElL.naturalHeight,
+                },
+            };
+
+            try {
+                const response = await fetch('{{ url_for("module7.calculate_shape") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Server error');
                 }
 
-                const data = {
-                    points_L: clickedPointsL,
-                    points_R: clickedPointsR,
-                    referenceDepthCm: referenceDepthCm, // Pass the reference depth
-                    displayedDimensions: {
-                        width: imageElL.clientWidth,
-                        height: imageElL.clientHeight,
-                    },
-                    originalDimensions: {
-                        width: imageElL.naturalWidth,
-                        height: imageElL.naturalHeight,
-                    },
-                };
+                displayResults(result);
+                statusEl.innerHTML = '<span class="text-green-400">✓ Calculation complete!</span>';
 
-                try {
-                    const response = await fetch('{{ url_for("module7.calculate_distance") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Server error occurred.');
-                    }
-
-                    const result = await response.json();
-                    displayResults(result);
-
-                } catch (error) {
-                    statusEl.textContent = `Error: ${error.message}`;
-                    resultsDisplay.style.display = 'none';
-                }
+            } catch (error) {
+                statusEl.innerHTML = `<span class="text-red-400">Error: ${error.message}</span>`;
+                calculateButton.disabled = false;
             }
+        }
 
-            function displayResults(result) {
-                document.getElementById('result-x').textContent = result.realWorldDistanceX;
-                document.getElementById('result-y').textContent = result.realWorldDistanceY;
-                document.getElementById('result-z').textContent = result.realWorldDistanceZ;
-                document.getElementById('result-total').textContent = result.totalRealWorldDistance;
-
-                document.getElementById('p1-3d').textContent = result.P1_3D;
-                document.getElementById('p2-3d').textContent = result.P2_3D;
-                document.getElementById('depth-1').textContent = result.point1_depth_Z;
-                document.getElementById('depth-2').textContent = result.point2_depth_Z;
-
-                statusEl.textContent = 'Calculation complete!';
-                statusEl.style.color = '#5cb85c';
-                resultsDisplay.style.display = 'block';
+        function displayResults(result) {
+            document.getElementById('results-placeholder').classList.add('hidden');
+            document.getElementById('results-display').classList.remove('hidden');
+            
+            document.getElementById('result-shape-type').textContent = result.shapeType.charAt(0).toUpperCase() + result.shapeType.slice(1);
+            document.getElementById('result-depth').textContent = `Avg Depth: ${result.avgDepth}`;
+            
+            const primaryEl = document.getElementById('primary-results');
+            const secondaryEl = document.getElementById('secondary-results');
+            
+            if (result.shapeType === 'rectangle') {
+                primaryEl.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Width</div>
+                            <div class="text-2xl font-bold gradient-text">${result.width}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Height</div>
+                            <div class="text-2xl font-bold gradient-text">${result.height}</div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3 pt-3 border-t border-violet-500/20">
+                        <div class="text-xs text-gray-400 mb-1">Area</div>
+                        <div class="text-lg font-semibold text-white">${result.area}</div>
+                    </div>
+                `;
+                secondaryEl.innerHTML = `
+                    <div class="result-row rounded-lg p-3">
+                        <div class="text-xs text-gray-400 mb-1">Individual Edges</div>
+                        <div class="text-gray-300">${result.edges.join(' | ')}</div>
+                    </div>
+                `;
+            } else if (result.shapeType === 'circle') {
+                primaryEl.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-xs text-gray-400 mb-1">Diameter</div>
+                        <div class="text-3xl font-bold gradient-text">${result.diameter}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-center mt-3 pt-3 border-t border-violet-500/20">
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Radius</div>
+                            <div class="text-lg font-semibold text-white">${result.radius}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-400 mb-1">Circumference</div>
+                            <div class="text-lg font-semibold text-white">${result.circumference}</div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3 pt-3 border-t border-violet-500/20">
+                        <div class="text-xs text-gray-400 mb-1">Area</div>
+                        <div class="text-lg font-semibold text-white">${result.area}</div>
+                    </div>
+                `;
+                secondaryEl.innerHTML = `
+                    <div class="result-row rounded-lg p-3">
+                        <div class="text-xs text-gray-400 mb-1">Center (3D)</div>
+                        <div class="text-gray-300 font-mono text-xs">${result.center}</div>
+                    </div>
+                `;
+            } else { // polygon
+                primaryEl.innerHTML = `
+                    <div class="text-center">
+                        <div class="text-xs text-gray-400 mb-1">Perimeter (${result.numVertices} vertices)</div>
+                        <div class="text-3xl font-bold gradient-text">${result.perimeter}</div>
+                    </div>
+                `;
+                secondaryEl.innerHTML = `
+                    <div class="result-row rounded-lg p-3">
+                        <div class="text-xs text-gray-400 mb-2">Edge Lengths</div>
+                        <div class="space-y-1">
+                            ${result.edges.map(e => `<div class="text-gray-300 text-xs font-mono">${e}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
             }
+            
+            // Add 3D points
+            secondaryEl.innerHTML += `
+                <div class="result-row rounded-lg p-3">
+                    <div class="text-xs text-gray-400 mb-2">3D Coordinates</div>
+                    <div class="space-y-1 max-h-24 overflow-y-auto">
+                        ${result.points3D.map(p => `<div class="text-gray-400 text-xs font-mono">${p}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
 
-            function resetMeasurement() {
-                clickedPointsL = [];
-                clickedPointsR = [];
-                clickCount = 0;
-                document.querySelectorAll('.click-marker').forEach(marker => marker.remove());
-                statusEl.textContent = 'Click **Point 1** on Left, then Right image. Then **Point 2** on Left, then Right image.';
-                statusEl.style.color = '#d9534f';
-                resultsDisplay.style.display = 'none';
-            }
-        });
+        function resetMeasurement() {
+            pointsL = [];
+            pointsR = [];
+            clickingLeft = true;
+            
+            // Remove markers
+            document.querySelectorAll('.click-marker').forEach(m => m.remove());
+            
+            // Reset UI
+            calculateButton.disabled = true;
+            document.getElementById('results-display').classList.add('hidden');
+            document.getElementById('results-placeholder').classList.remove('hidden');
+            
+            updateStatus();
+        }
+
+        // Event Listeners
+        imageElL.addEventListener('click', handleLeftClick);
+        imageElR.addEventListener('click', handleRightClick);
+        resetButton.addEventListener('click', resetMeasurement);
+        calculateButton.addEventListener('click', calculate);
+        polygonCountEl.addEventListener('change', resetMeasurement);
+
+        // Initialize
+        updateStatus();
     </script>
 </body>
 </html>
-

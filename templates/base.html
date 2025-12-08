@@ -86,20 +86,48 @@
         <div class="bg-white p-6 sm:p-10 rounded-xl shadow-2xl border border-gray-100">
             <!-- Content for the Home Page -->
             {% if current_route == '/' %}
-                <h1 class="text-4xl font-bold text-indigo-800 mb-6">Welcome to the Multi-Project Hub</h1>
+                <h1 class="text-4xl font-bold text-indigo-800 mb-4">Welcome to the Computer Vision Hub</h1>
                 <p class="text-gray-600 mb-8 max-w-3xl">
-                    Use the navigation bar above to explore the 5 different Flask projects integrated into this central hub.
-                    This setup allows for unified navigation and access points for all your applications.
+                    A collection of 6 computer vision modules built with Python, OpenCV, and Flask. 
+                    Each module demonstrates different techniques from camera calibration to stereo vision.
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for item in nav_items %}
                         {% if item.route != '/' and item.route != '/dashboard' %}
-                            <div class="p-5 border border-indigo-200 bg-indigo-50 rounded-lg shadow hover:shadow-md transition duration-300">
-                                <h2 class="text-xl font-semibold text-indigo-700 mb-2">{{ item.title }}</h2>
-                                <p class="text-sm text-gray-600 mb-4">A brief description of {{ item.title }} and its purpose.</p>
-                                <a href="{{ item.route }}" class="text-indigo-500 font-medium hover:text-indigo-700 transition duration-150 flex items-center">
-                                    Go to Project
-                                    <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            <div class="group p-6 border border-indigo-200 bg-gradient-to-br from-white to-indigo-50 rounded-xl shadow hover:shadow-lg hover:border-indigo-400 transition-all duration-300 flex flex-col">
+                                <!-- Icon -->
+                                <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-indigo-200 transition-colors">
+                                    {% if item.icon == 'ruler' %}
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                    {% elif item.icon == 'search' %}
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    {% elif item.icon == 'filter' %}
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                    {% elif item.icon == 'panorama' %}
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    {% elif item.icon == 'construction' %}
+                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                                    {% elif item.icon == 'stereo' %}
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    {% else %}
+                                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Title -->
+                                <h2 class="text-xl font-bold text-indigo-800 mb-2">{{ item.title }}</h2>
+                                
+                                <!-- Description -->
+                                <p class="text-sm text-gray-600 mb-4 flex-grow leading-relaxed">{{ item.description }}</p>
+                                
+                                <!-- Link -->
+                                <a href="{{ item.route }}" class="inline-flex items-center text-indigo-600 font-semibold hover:text-indigo-800 transition duration-150 mt-auto">
+                                    {% if item.icon == 'construction' %}
+                                    <span class="text-gray-400">Coming Soon</span>
+                                    {% else %}
+                                    Explore Module
+                                    <svg class="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                    {% endif %}
                                 </a>
                             </div>
                         {% endif %}
@@ -113,7 +141,7 @@
                     <p>{{ content_body | safe | default("This is placeholder content for the selected page.") }}</p>
                     <p class="mt-8 p-4 bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 rounded-md">
                         <strong>Developer Note:</strong> This content is being served by the main Flask Hub application (<code>app.py</code>).
-                        If you want to fully integrate the 5 sub-projects, you should replace this section with their specific HTML
+                        If you want to fully integrate the 6 modules, you should replace this section with their specific HTML
                         templates using the <code>render_template</code> function in <code>app.py</code> for each route.
                     </p>
                 </div>

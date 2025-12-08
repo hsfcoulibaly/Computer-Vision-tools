@@ -25,14 +25,54 @@ app.register_blueprint(module7_bp, url_prefix='/module/6')
 
 # Define the navigation items for the 8 tabs
 NAV_ITEMS = [
-    {'title': 'Home Hub', 'route': '/'},
-    {'title': 'Module 1', 'route': '/module/1'},
-    {'title': 'Module 2', 'route': '/module/2'},  # This links to the Blueprint index
-    {'title': 'Module 3', 'route': '/module/3'},
-    {'title': 'Module 4', 'route': '/module/4'},
-    {'title': 'Module 5', 'route': '/module/5'},
-    {'title': 'Module 6', 'route': '/module/6'},
-    {'title': 'Main Dashboard', 'route': '/dashboard'},
+    {
+        'title': 'Home Hub',
+        'route': '/',
+        'description': 'Central navigation hub for all computer vision modules.',
+        'icon': 'home'
+    },
+    {
+        'title': 'Module 1',
+        'route': '/module/1',
+        'description': 'Real-World Distance Calculator using camera calibration and pinhole model. Click two points on an image to measure actual distances in centimeters.',
+        'icon': 'ruler'
+    },
+    {
+        'title': 'Module 2',
+        'route': '/module/2',
+        'description': 'Template Matching with Object Blur using multi-scale NCC and ORB features. Also includes Fourier Transform Deconvolution with Wiener filtering.',
+        'icon': 'search'
+    },
+    {
+        'title': 'Module 3',
+        'route': '/module/3',
+        'description': 'Image Processing Suite: ArUco marker detection, Canny edge detection, Harris corner detection, and Laplacian of Gaussian (LoG) gradient analysis.',
+        'icon': 'filter'
+    },
+    {
+        'title': 'Module 4',
+        'route': '/module/4',
+        'description': 'SIFT Feature Detection & Panorama Stitching. Compare custom vs OpenCV SIFT implementations with RANSAC homography estimation.',
+        'icon': 'panorama'
+    },
+    {
+        'title': 'Module 5',
+        'route': '/module/5',
+        'description': 'Coming Soon - This module is under development. Check back later for new computer vision features.',
+        'icon': 'construction'
+    },
+    {
+        'title': 'Module 6',
+        'route': '/module/6',
+        'description': 'Stereo Vision & 3D Triangulation. Calculate real-world 3D distances using stereo image pairs and camera projection matrices.',
+        'icon': 'stereo'
+    },
+    {
+        'title': 'Main Dashboard',
+        'route': '/dashboard',
+        'description': 'Analytics and management dashboard for the hub application.',
+        'icon': 'dashboard'
+    },
 ]
 
 
