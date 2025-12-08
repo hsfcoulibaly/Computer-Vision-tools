@@ -4,15 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="20916990-d7bd-4dff-8ef3-ed353bba229d" name="Changes" comment="requirements imports">
-      <change afterPath="$PROJECT_DIR$/module2/static/scene/default_scene.jpg" afterDir="false" />
+    <list default="true" id="20916990-d7bd-4dff-8ef3-ed353bba229d" name="Changes" comment="update module 2 and images">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/module2/module2_blueprint.py" beforeDir="false" afterPath="$PROJECT_DIR$/module2/module2_blueprint.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/module2/static/templates/t" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/module2/templates/module2/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/module2/templates/module2/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/module2/utils/fourier_solver.py" beforeDir="false" afterPath="$PROJECT_DIR$/module2/utils/fourier_solver.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/module2/utils/template_matcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/module2/utils/template_matcher.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,11 +82,20 @@
       <option name="project" value="LOCAL" />
       <updated>1764806977267</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="update module 2 and images">
+      <option name="closed" value="true" />
+      <created>1765050894290</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1765050894290</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="requirements imports" />
-    <option name="LAST_COMMIT_MESSAGE" value="requirements imports" />
+    <MESSAGE value="update module 2 and images" />
+    <option name="LAST_COMMIT_MESSAGE" value="update module 2 and images" />
   </component>
 </project>
